@@ -1,11 +1,11 @@
 require 'capistrano'
 require 'capistrano/version'
 
-module CapistranoUnicorn
-  class CapistranoIntegration
-    def self.load_into(capistrano_config)
-      capistrano_config.load do
-        
+module Capistrano
+  module Unicorn
+    def self.load(configuration)
+      configuration.load do
+
         # Check if remote file exists
         #
         def remote_file_exists?(full_path)
@@ -16,7 +16,7 @@ module CapistranoUnicorn
         #
         _cset(:unicorn_pid, "#{fetch(:current_path)}/tmp/pids/unicorn.pid")
         _cset(:unicorn_env, (fetch(:rails_env) rescue 'production'))
-  
+
         namespace :unicorn do
           desc 'Start Unicorn'
           task :start, :roles => :app, :except => {:no_release => true} do
@@ -28,7 +28,7 @@ module CapistranoUnicorn
               logger.important("Config file for \"#{unicorn_env}\" environment was not found at \"#{config_path}\"", "Unicorn")
             end
           end
-          
+
           desc 'Stop Unicorn'
           task :stop, :roles => :app, :except => {:no_release => true} do
             if remote_file_exists?(unicorn_pid)
@@ -61,8 +61,8 @@ module CapistranoUnicorn
                 run "cd #{current_path} && bundle exec unicorn -c #{config_path} -E #{unicorn_env} -D"
               else
                 logger.important("Config file for \"#{unicorn_env}\" environment was not found at \"#{config_path}\"", "Unicorn")
-              end              
-            end 
+              end
+            end
           end
         end
 
@@ -73,5 +73,5 @@ module CapistranoUnicorn
 end
 
 if Capistrano::Configuration.instance
-  CapistranoUnicorn::CapistranoIntegration.load_into(Capistrano::Configuration.instance)
+  Capistrano::Configuration.instance.extend(Capistrano::Unicorn)
 end
